@@ -19,6 +19,7 @@ import {
   Settings,
   Printer,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { generatePDF } from "@/lib/pdfGenerator";
 
@@ -34,12 +35,18 @@ export interface CalculatorData {
   currency: string;
   vatPercent: number;
   rows: CalculatorRow[];
+  offerNumber: string;
+  companyName: string;
+  showTableInPDF: boolean;
 }
 
 const ContractCalculator = () => {
   const [currency, setCurrency] = useState("RSD");
-  const [vatPercent, setVatPercent] = useState(0);
+  const [vatPercent, setVatPercent] = useState(20);
   const [rows, setRows] = useState<CalculatorRow[]>([]);
+  const [offerNumber, setOfferNumber] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [showTableInPDF, setShowTableInPDF] = useState(true);
   const { toast } = useToast();
 
   const formatNumber = (n: number) => {
@@ -191,7 +198,14 @@ const ContractCalculator = () => {
   };
 
   const downloadPDF = () => {
-    const data: CalculatorData = { currency, vatPercent, rows };
+    const data: CalculatorData = {
+      currency,
+      vatPercent,
+      rows,
+      offerNumber,
+      companyName,
+      showTableInPDF,
+    };
     generatePDF(data);
     toast({
       title: "PDF fajl generisan",
@@ -220,63 +234,12 @@ const ContractCalculator = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {/* Desktop layout - sve u jednom redu */}
-              <div className="hidden lg:flex gap-4 items-end">
-                <div className="space-y-2">
-                  <Label htmlFor="currency">Valuta</Label>
-                  <Select value={currency} onValueChange={setCurrency}>
-                    <SelectTrigger className="w-24">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="RSD">RSD</SelectItem>
-                      <SelectItem value="EUR">EUR</SelectItem>
-                      <SelectItem value="USD">USD</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="vat">PDV (%)</Label>
-                  <Input
-                    id="vat"
-                    type="number"
-                    value={vatPercent}
-                    onChange={(e) => setVatPercent(Number(e.target.value) || 0)}
-                    className="w-20"
-                  />
-                </div>
-
-                <Button onClick={addRow} className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Dodaj red
-                </Button>
-                <Button onClick={loadExample} variant="secondary">
-                  Učitaj primer
-                </Button>
-                <Button
-                  onClick={downloadCSV}
-                  variant="outline"
-                  className="gap-2"
-                >
-                  <Download className="h-4 w-4" />
-                  CSV
-                </Button>
-                <Button
-                  onClick={downloadPDF}
-                  variant="outline"
-                  className="gap-2"
-                >
-                  <Printer className="h-4 w-4" />
-                  PDF
-                </Button>
-              </div>
-
-              {/* Mobile layout - valuta i PDV u prvom redu, dugmići ispod */}
-              <div className="lg:hidden space-y-4">
+              {/* Desktop layout - dva reda */}
+              <div className="hidden lg:block space-y-4">
+                {/* Prvi red - osnovne postavke */}
                 <div className="flex gap-4 items-end">
                   <div className="space-y-2">
-                    <Label htmlFor="currency-mobile">Valuta</Label>
+                    <Label htmlFor="currency">Valuta</Label>
                     <Select value={currency} onValueChange={setCurrency}>
                       <SelectTrigger className="w-24">
                         <SelectValue />
@@ -290,16 +253,147 @@ const ContractCalculator = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="vat-mobile">PDV (%)</Label>
+                    <Label htmlFor="vat">PDV (%)</Label>
                     <Input
-                      id="vat-mobile"
+                      id="vat"
                       type="number"
                       value={vatPercent}
-                      onChange={(e) =>
-                        setVatPercent(Number(e.target.value) || 0)
-                      }
+                      onChange={(e) => setVatPercent(Number(e.target.value))}
                       className="w-20"
                     />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="offerNumber">Broj ponude</Label>
+                    <Input
+                      id="offerNumber"
+                      value={offerNumber}
+                      onChange={(e) => setOfferNumber(e.target.value)}
+                      className="w-32"
+                      placeholder="P-0035/2025"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="companyName">Ime firme</Label>
+                    <Input
+                      id="companyName"
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      className="w-48"
+                      placeholder="Naziv firme"
+                    />
+                  </div>
+
+                  <div className="flex items-center border border-black/10 p-2 rounded-md space-x-2">
+                    <Checkbox
+                      id="showTable"
+                      checked={showTableInPDF}
+                      onCheckedChange={(checked) =>
+                        setShowTableInPDF(checked as boolean)
+                      }
+                    />
+                    <Label htmlFor="showTable" className="text-sm">
+                      Prikaži tabelu u PDF-u
+                    </Label>
+                  </div>
+                </div>
+
+                {/* Drugi red - dugmići */}
+                <div className="flex gap-2">
+                  <Button onClick={addRow} className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    Dodaj red
+                  </Button>
+                  <Button onClick={loadExample} variant="secondary">
+                    Učitaj primer
+                  </Button>
+                  <Button
+                    onClick={downloadCSV}
+                    variant="outline"
+                    className="gap-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    CSV
+                  </Button>
+                  <Button
+                    onClick={downloadPDF}
+                    variant="outline"
+                    className="gap-2"
+                  >
+                    <Printer className="h-4 w-4" />
+                    PDF
+                  </Button>
+                </div>
+              </div>
+
+              {/* Mobile layout - valuta i PDV u prvom redu, dugmići ispod */}
+              <div className="lg:hidden space-y-4">
+                <div className="space-y-4">
+                  <div className="flex gap-4 items-end">
+                    <div className="space-y-2">
+                      <Label htmlFor="currency-mobile">Valuta</Label>
+                      <Select value={currency} onValueChange={setCurrency}>
+                        <SelectTrigger className="w-24">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="RSD">RSD</SelectItem>
+                          <SelectItem value="EUR">EUR</SelectItem>
+                          <SelectItem value="USD">USD</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="vat-mobile">PDV (%)</Label>
+                      <Input
+                        id="vat-mobile"
+                        type="number"
+                        value={vatPercent}
+                        onChange={(e) =>
+                          setVatPercent(Number(e.target.value) || 0)
+                        }
+                        className="w-20"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="offerNumber-mobile">Broj ponude</Label>
+                      <Input
+                        id="offerNumber-mobile"
+                        value={offerNumber}
+                        onChange={(e) => setOfferNumber(e.target.value)}
+                        className="w-full sm:w-32"
+                        placeholder="P-0035/2025"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="companyName-mobile">Ime firme</Label>
+                      <Input
+                        id="companyName-mobile"
+                        value={companyName}
+                        onChange={(e) => setCompanyName(e.target.value)}
+                        className="w-full sm:w-48"
+                        placeholder="Naziv firme"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="showTable-mobile"
+                      checked={showTableInPDF}
+                      onCheckedChange={(checked) =>
+                        setShowTableInPDF(checked as boolean)
+                      }
+                    />
+                    <Label htmlFor="showTable-mobile" className="text-sm">
+                      Prikaži tabelu u PDF-u
+                    </Label>
                   </div>
                 </div>
 
@@ -463,39 +557,6 @@ const ContractCalculator = () => {
             </div>
           </CardContent>
         </Card>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base sm:text-lg">Usage Tips</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-xs sm:text-sm text-muted-foreground">
-              <p>
-                • Change quantities or prices to see calculations update
-                instantly
-              </p>
-              <p>• Add or remove rows as needed for your contract</p>
-              <p>
-                • Export to CSV for spreadsheet analysis or PDF for professional
-                documents
-              </p>
-              <p>• The VAT percentage applies to the entire subtotal</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base sm:text-lg">Features</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-xs sm:text-sm text-muted-foreground">
-              <p>• Multi-currency support (RSD, EUR, USD)</p>
-              <p>• Automatic VAT calculation</p>
-              <p>• Professional PDF export with company branding</p>
-              <p>• CSV export for data analysis</p>
-              <p>• Real-time calculations</p>
-            </CardContent>
-          </Card>
-        </div>
       </div>
     </div>
   );

@@ -1,5 +1,4 @@
 import ContractCalculator from "@/components/ContractCalculator";
-import DemoContent from "@/components/DemoContent";
 
 const Index = () => {
   return (
