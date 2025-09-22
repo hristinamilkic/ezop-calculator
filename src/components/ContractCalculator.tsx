@@ -185,8 +185,8 @@ const ContractCalculator = () => {
     URL.revokeObjectURL(url);
 
     toast({
-      title: "CSV downloaded",
-      description: "Your calculation has been exported to CSV.",
+      title: "CSV fajl preuzet",
+      description: "Ponuda je uspešno exportovana u CSV fajl.",
     });
   };
 
@@ -194,20 +194,20 @@ const ContractCalculator = () => {
     const data: CalculatorData = { currency, vatPercent, rows };
     generatePDF(data);
     toast({
-      title: "PDF generated",
-      description: "Your calculation has been exported to PDF.",
+      title: "PDF fajl generisan",
+      description: "Ponuda je uspešno exportovana u PDF fajl.",
     });
   };
 
   const totals = calculateTotals();
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <div className="flex flex-row items-center justify-between space-x-2">
-          <img className="w-24" src={logoEzop} />
-          <h1 className="text-3xl font-bold text-foreground">
-            Kalkulator ponude
+    <div className="min-h-screen bg-background p-2 sm:p-4 my-2">
+      <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0 sm:space-x-2">
+          <img className="w-20 sm:w-24" src={logoEzop} alt="eZOP Logo" />
+          <h1 className="text-lg sm:text-xl md:text-2xl font-normal text-foreground text-center sm:text-left">
+            Kalkulator ponude eZOP softvera
           </h1>
         </div>
 
@@ -219,33 +219,34 @@ const ContractCalculator = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-4 items-end">
-              <div className="space-y-2">
-                <Label htmlFor="currency">Valuta</Label>
-                <Select value={currency} onValueChange={setCurrency}>
-                  <SelectTrigger className="w-24">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="RSD">RSD</SelectItem>
-                    <SelectItem value="EUR">EUR</SelectItem>
-                    <SelectItem value="USD">USD</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-4">
+              {/* Desktop layout - sve u jednom redu */}
+              <div className="hidden lg:flex gap-4 items-end">
+                <div className="space-y-2">
+                  <Label htmlFor="currency">Valuta</Label>
+                  <Select value={currency} onValueChange={setCurrency}>
+                    <SelectTrigger className="w-24">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="RSD">RSD</SelectItem>
+                      <SelectItem value="EUR">EUR</SelectItem>
+                      <SelectItem value="USD">USD</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="vat">PDV (%)</Label>
-                <Input
-                  id="vat"
-                  type="number"
-                  value={vatPercent}
-                  onChange={(e) => setVatPercent(Number(e.target.value) || 0)}
-                  className="w-20"
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="vat">PDV (%)</Label>
+                  <Input
+                    id="vat"
+                    type="number"
+                    value={vatPercent}
+                    onChange={(e) => setVatPercent(Number(e.target.value) || 0)}
+                    className="w-20"
+                  />
+                </div>
 
-              <div className="flex gap-2">
                 <Button onClick={addRow} className="gap-2">
                   <Plus className="h-4 w-4" />
                   Dodaj red
@@ -270,6 +271,70 @@ const ContractCalculator = () => {
                   PDF
                 </Button>
               </div>
+
+              {/* Mobile layout - valuta i PDV u prvom redu, dugmići ispod */}
+              <div className="lg:hidden space-y-4">
+                <div className="flex gap-4 items-end">
+                  <div className="space-y-2">
+                    <Label htmlFor="currency-mobile">Valuta</Label>
+                    <Select value={currency} onValueChange={setCurrency}>
+                      <SelectTrigger className="w-24">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="RSD">RSD</SelectItem>
+                        <SelectItem value="EUR">EUR</SelectItem>
+                        <SelectItem value="USD">USD</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="vat-mobile">PDV (%)</Label>
+                    <Input
+                      id="vat-mobile"
+                      type="number"
+                      value={vatPercent}
+                      onChange={(e) =>
+                        setVatPercent(Number(e.target.value) || 0)
+                      }
+                      className="w-20"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button onClick={addRow} className="gap-2 w-full sm:w-auto">
+                    <Plus className="h-4 w-4" />
+                    Dodaj red
+                  </Button>
+                  <Button
+                    onClick={loadExample}
+                    variant="secondary"
+                    className="w-full sm:w-auto"
+                  >
+                    Učitaj primer
+                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={downloadCSV}
+                      variant="outline"
+                      className="gap-2 flex-1 sm:flex-none"
+                    >
+                      <Download className="h-4 w-4" />
+                      <span className="hidden sm:inline">CSV</span>
+                    </Button>
+                    <Button
+                      onClick={downloadPDF}
+                      variant="outline"
+                      className="gap-2 flex-1 sm:flex-none"
+                    >
+                      <Printer className="h-4 w-4" />
+                      <span className="hidden sm:inline">PDF</span>
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -277,33 +342,38 @@ const ContractCalculator = () => {
         <Card>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full min-w-[600px]">
                 <thead>
                   <tr className="border-b bg-table-header">
-                    <th className="text-left p-4 font-medium">Entitet</th>
-                    <th className="text-right p-4 font-medium">
+                    <th className="text-left p-2 sm:p-4 font-bold text-sm sm:text-base">
+                      Entitet
+                    </th>
+                    <th className="text-right p-2 sm:p-4 font-bold text-sm sm:text-base">
                       Jedinična cena ({currency})
                     </th>
-                    <th className="text-right p-4 font-medium">Količina</th>
-                    <th className="text-right p-4 font-medium">
+                    <th className="text-right p-2 sm:p-4 font-bold text-sm sm:text-base">
+                      Količina
+                    </th>
+                    <th className="text-right p-2 sm:p-4 font-bold text-sm sm:text-base">
                       Ukupno ({currency})
                     </th>
-                    <th className="w-20 p-4"></th>
+                    <th className="w-16 sm:w-20 p-2 sm:p-4"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.map((row) => (
                     <tr key={row.id} className="border-b hover:bg-muted/50">
-                      <td className="p-2">
+                      <td className="p-1 sm:p-2">
                         <Input
                           value={row.description}
                           onChange={(e) =>
                             updateRow(row.id, "description", e.target.value)
                           }
-                          className="border-0 bg-transparent focus-visible:ring-0"
+                          className="border-0 bg-transparent focus-visible:ring-0 font-medium text-sm sm:text-base"
+                          placeholder="Opis stavke"
                         />
                       </td>
-                      <td className="p-2">
+                      <td className="p-1 sm:p-2">
                         <Input
                           type="number"
                           step="any"
@@ -315,10 +385,11 @@ const ContractCalculator = () => {
                               Number(e.target.value) || 0
                             )
                           }
-                          className="border-0 bg-transparent text-right focus-visible:ring-0"
+                          className="border-0 bg-transparent text-right focus-visible:ring-0 text-sm sm:text-base"
+                          placeholder="0"
                         />
                       </td>
-                      <td className="p-2">
+                      <td className="p-1 sm:p-2">
                         <Input
                           type="number"
                           step="1"
@@ -330,20 +401,21 @@ const ContractCalculator = () => {
                               Number(e.target.value) || 0
                             )
                           }
-                          className="border-0 bg-transparent text-right focus-visible:ring-0"
+                          className="border-0 bg-transparent text-right focus-visible:ring-0 text-sm sm:text-base"
+                          placeholder="0"
                         />
                       </td>
-                      <td className="p-4 text-right font-medium">
+                      <td className="p-2 sm:p-4 text-right font-medium text-sm sm:text-base">
                         {formatNumber(row.total)}
                       </td>
-                      <td className="p-2 text-center">
+                      <td className="p-1 sm:p-2 text-center">
                         <Button
                           size="sm"
                           variant="ghost"
                           onClick={() => removeRow(row.id)}
-                          className="text-destructive hover:text-destructive-foreground hover:bg-destructive"
+                          className="text-destructive hover:text-destructive-foreground hover:bg-destructive h-8 w-8 p-0"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
                       </td>
                     </tr>
@@ -351,28 +423,37 @@ const ContractCalculator = () => {
                 </tbody>
                 <tfoot>
                   <tr className="border-b bg-table-header">
-                    <td colSpan={3} className="p-4 text-right font-semibold">
+                    <td
+                      colSpan={3}
+                      className="p-2 sm:p-4 text-right font-semibold text-sm sm:text-base"
+                    >
                       Ukupno
                     </td>
-                    <td className="p-4 text-right font-semibold">
+                    <td className="p-2 sm:p-4 text-right font-semibold text-sm sm:text-base">
                       {formatNumber(totals.subtotal)}
                     </td>
                     <td></td>
                   </tr>
                   <tr className="border-b bg-table-header">
-                    <td colSpan={3} className="p-4 text-right font-semibold">
+                    <td
+                      colSpan={3}
+                      className="p-2 sm:p-4 text-right font-semibold text-sm sm:text-base"
+                    >
                       PDV {vatPercent}%
                     </td>
-                    <td className="p-4 text-right font-semibold">
+                    <td className="p-2 sm:p-4 text-right font-semibold text-sm sm:text-base">
                       {formatNumber(totals.vatAmount)}
                     </td>
                     <td></td>
                   </tr>
                   <tr className="bg-primary/10">
-                    <td colSpan={3} className="p-4 text-right font-bold">
+                    <td
+                      colSpan={3}
+                      className="p-2 sm:p-4 text-right font-bold text-sm sm:text-base"
+                    >
                       Total{" "}
                     </td>
-                    <td className="p-4 text-right font-bold text-primary">
+                    <td className="p-2 sm:p-4 text-right font-bold text-primary text-sm sm:text-base">
                       {formatNumber(totals.monthlyTotal)}
                     </td>
                     <td></td>
@@ -383,12 +464,12 @@ const ContractCalculator = () => {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <Card>
             <CardHeader>
-              <CardTitle>Usage Tips</CardTitle>
+              <CardTitle className="text-base sm:text-lg">Usage Tips</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2 text-sm text-muted-foreground">
+            <CardContent className="space-y-2 text-xs sm:text-sm text-muted-foreground">
               <p>
                 • Change quantities or prices to see calculations update
                 instantly
@@ -404,9 +485,9 @@ const ContractCalculator = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>Features</CardTitle>
+              <CardTitle className="text-base sm:text-lg">Features</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2 text-sm text-muted-foreground">
+            <CardContent className="space-y-2 text-xs sm:text-sm text-muted-foreground">
               <p>• Multi-currency support (RSD, EUR, USD)</p>
               <p>• Automatic VAT calculation</p>
               <p>• Professional PDF export with company branding</p>
