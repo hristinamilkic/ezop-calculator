@@ -1,206 +1,306 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Contract Price Calculator</title>
-<style>
-  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;max-width:980px;margin:20px auto;padding:0 16px;color:#111}
-  h1{font-size:20px;margin-bottom:8px}
-  table{width:100%;border-collapse:collapse;margin-top:12px}
-  th,td{border:1px solid #ddd;padding:8px}
-  th{background:#f3f4f6;text-align:left}
-  input[type="number"], input[type="text"]{width:100%;box-sizing:border-box;padding:6px}
-  .toolbar{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
-  .btn{padding:8px 12px;border-radius:6px;background:#0b74de;color:white;border:none;cursor:pointer}
-  .btn.secondary{background:#4caf50}
-  .btn.ghost{background:#eee;color:#111}
-  .right{text-align:right}
-  tfoot td{font-weight:700}
-  .small{font-size:13px;color:#555}
-</style>
-</head>
-<body>
-<h1>Contract Price Calculator</h1>
-<div class="toolbar">
-  <label>Currency:
-    <select id="currency" aria-label="currency">
-      <option>RSD</option><option>EUR</option><option>USD</option>
-    </select>
-  </label>
-  <label>VAT %:
-    <input id="vat" type="number" value="0" style="width:70px" />
-  </label>
-  <button id="addRow" class="btn">Add row</button>
-  <button id="loadExample" class="btn ghost">Load example</button>
-  <button id="downloadCsv" class="btn secondary">Download CSV</button>
-  <button id="printBtn" class="btn ghost">Print / Save PDF</button>
-</div>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Kalkulator ponude eZOP softvera</title>
+    <style>
+      body {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+        max-width: 980px;
+        margin: 20px auto;
+        padding: 0 16px;
+        color: #111;
+      }
+      h1 {
+        font-size: 20px;
+        margin-bottom: 8px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 12px;
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 8px;
+      }
+      th {
+        background: #f3f4f6;
+        text-align: left;
+      }
+      input[type="number"],
+      input[type="text"] {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 6px;
+      }
+      .toolbar {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-top: 8px;
+        flex-wrap: wrap;
+      }
+      .btn {
+        padding: 8px 12px;
+        border-radius: 6px;
+        background: #0b74de;
+        color: white;
+        border: none;
+        cursor: pointer;
+      }
+      .btn.secondary {
+        background: #4caf50;
+      }
+      .btn.ghost {
+        background: #eee;
+        color: #111;
+      }
+      .right {
+        text-align: right;
+      }
+      tfoot td {
+        font-weight: 700;
+      }
+      .small {
+        font-size: 13px;
+        color: #555;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Contract Price Calculator</h1>
+    <div class="toolbar">
+      <label
+        >Currency:
+        <select id="currency" aria-label="currency">
+          <option>RSD</option>
+          <option>EUR</option>
+          <option>USD</option>
+        </select>
+      </label>
+      <label
+        >VAT %:
+        <input id="vat" type="number" value="0" style="width: 70px" />
+      </label>
+      <button id="addRow" class="btn">Add row</button>
+      <button id="loadExample" class="btn ghost">Load example</button>
+      <button id="downloadCsv" class="btn secondary">Download CSV</button>
+      <button id="printBtn" class="btn ghost">Print / Save PDF</button>
+    </div>
 
-<table id="calcTable" aria-label="calculator table">
-  <thead>
-    <tr><th>Description</th><th class="right">Unit Price</th><th class="right">Quantity</th><th class="right">Total</th><th></th></tr>
-  </thead>
-  <tbody id="tbody"></tbody>
-  <tfoot>
-    <tr><td colspan="3" class="right">Subtotal</td><td id="subtotal" class="right">0</td><td></td></tr>
-    <tr><td colspan="3" class="right">VAT <span id="vatLabel">0</span>%</td><td id="vatAmount" class="right">0</td><td></td></tr>
-    <tr><td colspan="3" class="right">Monthly Total</td><td id="monthlyTotal" class="right">0</td><td></td></tr>
-  </tfoot>
-</table>
+    <table id="calcTable" aria-label="calculator table">
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th class="right">Unit Price</th>
+          <th class="right">Quantity</th>
+          <th class="right">Total</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+      <tfoot>
+        <tr>
+          <td colspan="3" class="right">Subtotal</td>
+          <td id="subtotal" class="right">0</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td colspan="3" class="right">VAT <span id="vatLabel">0</span>%</td>
+          <td id="vatAmount" class="right">0</td>
+          <td></td>
+        </tr>
+        <tr>
+          <td colspan="3" class="right">Monthly Total</td>
+          <td id="monthlyTotal" class="right">0</td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
 
-<p class="small">Tip: change quantities or prices to recalculate instantly. You can add or remove rows and export results.</p>
+    <p class="small">
+      Tip: change quantities or prices to recalculate instantly. You can add or
+      remove rows and export results.
+    </p>
 
-<script>
-(function(){
-  const tbody = document.getElementById('tbody');
-  const vatInput = document.getElementById('vat');
-  const currencySelect = document.getElementById('currency');
-  const subtotalEl = document.getElementById('subtotal');
-  const vatAmountEl = document.getElementById('vatAmount');
-  const monthlyTotalEl = document.getElementById('monthlyTotal');
-  const vatLabel = document.getElementById('vatLabel');
+    <script>
+      (function () {
+        const tbody = document.getElementById("tbody");
+        const vatInput = document.getElementById("vat");
+        const currencySelect = document.getElementById("currency");
+        const subtotalEl = document.getElementById("subtotal");
+        const vatAmountEl = document.getElementById("vatAmount");
+        const monthlyTotalEl = document.getElementById("monthlyTotal");
+        const vatLabel = document.getElementById("vatLabel");
 
-  let rows = [];
+        let rows = [];
 
-  function formatNum(n){
-    return Number(n).toLocaleString(undefined, {maximumFractionDigits:2});
-  }
+        function formatNum(n) {
+          return Number(n).toLocaleString(undefined, {
+            maximumFractionDigits: 2,
+          });
+        }
 
-  function rowTotal(r){
-    const p = Number(r.price)||0;
-    const q = Number(r.qty)||0;
-    return p*q;
-  }
+        function rowTotal(r) {
+          const p = Number(r.price) || 0;
+          const q = Number(r.qty) || 0;
+          return p * q;
+        }
 
-  function recalc(){
-    rows.forEach(r => r.total = rowTotal(r));
-    const subtotal = rows.reduce((s,r)=>s + (r.total || 0), 0);
-    const vatPercent = Number(vatInput.value) || 0;
-    const vatAmount = subtotal * (vatPercent/100);
-    const monthlyTotal = subtotal + vatAmount;
-    subtotalEl.textContent = formatNum(subtotal);
-    vatAmountEl.textContent = formatNum(vatAmount);
-    monthlyTotalEl.textContent = formatNum(monthlyTotal);
-    vatLabel.textContent = vatPercent;
-    renderRows();
-  }
+        function recalc() {
+          rows.forEach((r) => (r.total = rowTotal(r)));
+          const subtotal = rows.reduce((s, r) => s + (r.total || 0), 0);
+          const vatPercent = Number(vatInput.value) || 0;
+          const vatAmount = subtotal * (vatPercent / 100);
+          const monthlyTotal = subtotal + vatAmount;
+          subtotalEl.textContent = formatNum(subtotal);
+          vatAmountEl.textContent = formatNum(vatAmount);
+          monthlyTotalEl.textContent = formatNum(monthlyTotal);
+          vatLabel.textContent = vatPercent;
+          renderRows();
+        }
 
-  function createRow(desc='', price=0, qty=0){
-    return { id: Date.now() + Math.random(), desc, price, qty, total: price*qty };
-  }
+        function createRow(desc = "", price = 0, qty = 0) {
+          return {
+            id: Date.now() + Math.random(),
+            desc,
+            price,
+            qty,
+            total: price * qty,
+          };
+        }
 
-  function renderRows(){
-    tbody.innerHTML = '';
-    rows.forEach(r=>{
-      const tr = document.createElement('tr');
+        function renderRows() {
+          tbody.innerHTML = "";
+          rows.forEach((r) => {
+            const tr = document.createElement("tr");
 
-      const tdDesc = document.createElement('td');
-      const inpDesc = document.createElement('input');
-      inpDesc.type = 'text';
-      inpDesc.value = r.desc;
-      inpDesc.addEventListener('input', e=>{ r.desc = e.target.value; });
-      tdDesc.appendChild(inpDesc);
+            const tdDesc = document.createElement("td");
+            const inpDesc = document.createElement("input");
+            inpDesc.type = "text";
+            inpDesc.value = r.desc;
+            inpDesc.addEventListener("input", (e) => {
+              r.desc = e.target.value;
+            });
+            tdDesc.appendChild(inpDesc);
 
-      const tdPrice = document.createElement('td');
-      tdPrice.className = 'right';
-      const inpPrice = document.createElement('input');
-      inpPrice.type = 'number';
-      inpPrice.step = 'any';
-      inpPrice.value = r.price;
-      inpPrice.addEventListener('input', e=>{ r.price = Number(e.target.value); recalc(); });
-      tdPrice.appendChild(inpPrice);
+            const tdPrice = document.createElement("td");
+            tdPrice.className = "right";
+            const inpPrice = document.createElement("input");
+            inpPrice.type = "number";
+            inpPrice.step = "any";
+            inpPrice.value = r.price;
+            inpPrice.addEventListener("input", (e) => {
+              r.price = Number(e.target.value);
+              recalc();
+            });
+            tdPrice.appendChild(inpPrice);
 
-      const tdQty = document.createElement('td');
-      tdQty.className = 'right';
-      const inpQty = document.createElement('input');
-      inpQty.type = 'number';
-      inpQty.step = '1';
-      inpQty.value = r.qty;
-      inpQty.addEventListener('input', e=>{ r.qty = Number(e.target.value); recalc(); });
-      tdQty.appendChild(inpQty);
+            const tdQty = document.createElement("td");
+            tdQty.className = "right";
+            const inpQty = document.createElement("input");
+            inpQty.type = "number";
+            inpQty.step = "1";
+            inpQty.value = r.qty;
+            inpQty.addEventListener("input", (e) => {
+              r.qty = Number(e.target.value);
+              recalc();
+            });
+            tdQty.appendChild(inpQty);
 
-      const tdTotal = document.createElement('td');
-      tdTotal.className = 'right';
-      tdTotal.textContent = formatNum(r.total);
+            const tdTotal = document.createElement("td");
+            tdTotal.className = "right";
+            tdTotal.textContent = formatNum(r.total);
 
-      const tdAct = document.createElement('td');
-      const btnRem = document.createElement('button');
-      btnRem.textContent = 'Remove';
-      btnRem.className = 'btn ghost';
-      btnRem.addEventListener('click', ()=>{
-        rows = rows.filter(x=>x.id!==r.id);
-        recalc();
-      });
-      tdAct.appendChild(btnRem);
+            const tdAct = document.createElement("td");
+            const btnRem = document.createElement("button");
+            btnRem.textContent = "Remove";
+            btnRem.className = "btn ghost";
+            btnRem.addEventListener("click", () => {
+              rows = rows.filter((x) => x.id !== r.id);
+              recalc();
+            });
+            tdAct.appendChild(btnRem);
 
-      tr.appendChild(tdDesc); tr.appendChild(tdPrice); tr.appendChild(tdQty); tr.appendChild(tdTotal); tr.appendChild(tdAct);
-      tbody.appendChild(tr);
-    });
-  }
+            tr.appendChild(tdDesc);
+            tr.appendChild(tdPrice);
+            tr.appendChild(tdQty);
+            tr.appendChild(tdTotal);
+            tr.appendChild(tdAct);
+            tbody.appendChild(tr);
+          });
+        }
 
-  // buttons
-  document.getElementById('addRow').addEventListener('click', ()=>{
-    rows.push(createRow('New item',0,0));
-    recalc();
-  });
+        // buttons
+        document.getElementById("addRow").addEventListener("click", () => {
+          rows.push(createRow("New item", 0, 0));
+          recalc();
+        });
 
-  document.getElementById('loadExample').addEventListener('click', ()=>{
-    rows = [
-      createRow('Broj WEB naloga',1000,3),
-      createRow('Broj MOB naloga',800,0),
-      createRow('Broj objekata',10,104),
-      createRow('Grupe objekata',100,10),
-      createRow('PP aparati',1.4,869),
-      createRow('Hidranti',15,80),
-      createRow('Instalacije',110,104),
-    ];
-    recalc();
-  });
+        document.getElementById("loadExample").addEventListener("click", () => {
+          rows = [
+            createRow("Broj WEB naloga", 1000, 3),
+            createRow("Broj MOB naloga", 800, 0),
+            createRow("Broj objekata", 10, 104),
+            createRow("Grupe objekata", 100, 10),
+            createRow("PP aparati", 1.4, 869),
+            createRow("Hidranti", 15, 80),
+            createRow("Instalacije", 110, 104),
+          ];
+          recalc();
+        });
 
-  document.getElementById('downloadCsv').addEventListener('click', ()=>{
-    const header = ['Description','Unit Price','Quantity','Total'];
-    const lines = [header.join(',')];
-    rows.forEach(r=>{
-      const row = [
-        '"' + String(r.desc).replace(/"/g,'""') + '"',
-        r.price,
-        r.qty,
-        r.total
-      ];
-      lines.push(row.join(','));
-    });
-    const subtotal = rows.reduce((s,r)=>s + (r.total||0),0);
-    const vatPercent = Number(vatInput.value)||0;
-    const vatAmount = subtotal * (vatPercent/100);
-    const monthlyTotal = subtotal + vatAmount;
-    lines.push(['','','Subtotal',subtotal].join(','));
-    lines.push(['','',`VAT ${vatPercent}%`,vatAmount].join(','));
-    lines.push(['','','Monthly Total',monthlyTotal].join(','));
-    const blob = new Blob([lines.join('\n')], {type:'text/csv;charset=utf-8;'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'contract_price_calculation.csv';
-    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-  });
+        document.getElementById("downloadCsv").addEventListener("click", () => {
+          const header = ["Description", "Unit Price", "Quantity", "Total"];
+          const lines = [header.join(",")];
+          rows.forEach((r) => {
+            const row = [
+              '"' + String(r.desc).replace(/"/g, '""') + '"',
+              r.price,
+              r.qty,
+              r.total,
+            ];
+            lines.push(row.join(","));
+          });
+          const subtotal = rows.reduce((s, r) => s + (r.total || 0), 0);
+          const vatPercent = Number(vatInput.value) || 0;
+          const vatAmount = subtotal * (vatPercent / 100);
+          const monthlyTotal = subtotal + vatAmount;
+          lines.push(["", "", "Subtotal", subtotal].join(","));
+          lines.push(["", "", `VAT ${vatPercent}%`, vatAmount].join(","));
+          lines.push(["", "", "Monthly Total", monthlyTotal].join(","));
+          const blob = new Blob([lines.join("\n")], {
+            type: "text/csv;charset=utf-8;",
+          });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "contract_price_calculation.csv";
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+        });
 
-  document.getElementById('printBtn').addEventListener('click', ()=>{
-    window.print();
-  });
+        document.getElementById("printBtn").addEventListener("click", () => {
+          window.print();
+        });
 
-  vatInput.addEventListener('input', recalc);
+        vatInput.addEventListener("input", recalc);
 
-  // initialize with example
-  document.getElementById('loadExample').click();
+        // initialize with example
+        document.getElementById("loadExample").click();
 
-  // expose a basic PWA manifest suggestion (not used here)
-  window.getCalculatorData = ()=>({
-    currency: currencySelect.value,
-    vat: Number(vatInput.value)||0,
-    rows
-  });
-
-})();
-</script>
-</body>
+        // expose a basic PWA manifest suggestion (not used here)
+        window.getCalculatorData = () => ({
+          currency: currencySelect.value,
+          vat: Number(vatInput.value) || 0,
+          rows,
+        });
+      })();
+    </script>
+  </body>
 </html>

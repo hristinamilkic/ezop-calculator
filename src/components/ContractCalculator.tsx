@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { generatePDF } from "@/lib/pdfGenerator";
+import { generatePDF } from "../lib/pdfGenerator";
 
 export interface CalculatorRow {
   id: string;
@@ -38,6 +38,7 @@ export interface CalculatorData {
   offerNumber: string;
   companyName: string;
   showTableInPDF: boolean;
+  isAccreditedCompany: boolean;
 }
 
 const ContractCalculator = () => {
@@ -47,6 +48,7 @@ const ContractCalculator = () => {
   const [offerNumber, setOfferNumber] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [showTableInPDF, setShowTableInPDF] = useState(true);
+  const [isAccreditedCompany, setIsAccreditedCompany] = useState(false);
   const { toast } = useToast();
 
   const formatNumber = (n: number) => {
@@ -205,6 +207,7 @@ const ContractCalculator = () => {
       offerNumber,
       companyName,
       showTableInPDF,
+      isAccreditedCompany,
     };
     generatePDF(data);
     toast({
@@ -295,6 +298,19 @@ const ContractCalculator = () => {
                     />
                     <Label htmlFor="showTable" className="text-sm">
                       Prikaži tabelu u PDF-u
+                    </Label>
+                  </div>
+
+                  <div className="flex items-center border border-black/10 p-2 rounded-md space-x-2">
+                    <Checkbox
+                      id="accreditedCompany"
+                      checked={isAccreditedCompany}
+                      onCheckedChange={(checked) =>
+                        setIsAccreditedCompany(checked as boolean)
+                      }
+                    />
+                    <Label htmlFor="accreditedCompany" className="text-sm">
+                      Ponuda za firmu akreditovanu za servis i kontrolu
                     </Label>
                   </div>
                 </div>
