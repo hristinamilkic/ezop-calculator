@@ -6,6 +6,66 @@ import "../fonts/OpenSans-Bold-bold.js";
 import "../fonts/OpenSans-Italic-italic.js";
 import "../fonts/OpenSans-BoldItalic-bolditalic.js";
 
+// Helper function to draw text with bold keywords
+const drawTextWithBoldKeywords = (
+  pdf: jsPDF,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  keywords: string[],
+  lineHeightFactor: number = 1.3
+): number => {
+  const lines = pdf.splitTextToSize(text, maxWidth);
+  let currentY = y;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    let currentX = x;
+
+    // Find all keywords in this line
+    let remainingText = line;
+    let foundKeyword = false;
+
+    for (const keyword of keywords) {
+      if (remainingText.includes(keyword)) {
+        const parts = remainingText.split(keyword);
+
+        // Draw text before keyword
+        if (parts[0]) {
+          pdf.setFont("OpenSans-Regular", "normal");
+          pdf.text(parts[0], currentX, currentY, { lineHeightFactor });
+          currentX += pdf.getTextWidth(parts[0]);
+        }
+
+        // Draw bold keyword
+        pdf.setFont("OpenSans-Bold", "bold");
+        pdf.text(keyword, currentX, currentY, { lineHeightFactor });
+        currentX += pdf.getTextWidth(keyword);
+
+        // Update remaining text
+        remainingText = parts[1] || "";
+        foundKeyword = true;
+        break;
+      }
+    }
+
+    // Draw remaining text
+    if (remainingText) {
+      pdf.setFont("OpenSans-Regular", "normal");
+      pdf.text(remainingText, currentX, currentY, { lineHeightFactor });
+    } else if (!foundKeyword) {
+      // No keywords found, draw entire line normally
+      pdf.setFont("OpenSans-Regular", "normal");
+      pdf.text(line, currentX, currentY, { lineHeightFactor });
+    }
+
+    currentY += 5;
+  }
+
+  return currentY - y; // Return height used
+};
+
 export const generatePDF = (data: CalculatorData) => {
   const pdf = new jsPDF();
   const pageWidth = pdf.internal.pageSize.getWidth();
@@ -63,7 +123,11 @@ export const generatePDF = (data: CalculatorData) => {
   // Broj ponude i datum (leva strana ispod logoa)
   pdf.setFontSize(11);
   pdf.setFont("OpenSans-Regular", "normal");
-  const currentDate = new Date().toLocaleDateString();
+  const currentDate = new Date().toLocaleDateString("sr-RS", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
   pdf.text(`Broj: ${data.offerNumber}`, 20, 40);
   pdf.text(`Datum: ${currentDate}`, 20, 47);
   pdf.text("REF: Ponuda", 20, 54);
@@ -102,7 +166,7 @@ const checkAndAddPage = (
 
   if (yPosition + contentHeight > pageHeight - bottomMargin) {
     pdf.addPage();
-    return 10; // Start new page from top with minimal margin
+    return 20; // Start new page from top with 20px margin
   }
   return yPosition;
 };
@@ -125,35 +189,41 @@ const generateRegularCompanyContent = (
   pdf.text(subjectPrefix, 20, yPosition);
 
   // Calculate width of the prefix
-  const prefixWidth = pdf.getStringUnitWidth(subjectPrefix) * 11;
+  const prefixWidth = pdf.getTextWidth(subjectPrefix);
 
   // Part 2: Rest of the first line in bold font
   const subjectPart1 =
     "Ponuda za implermentaciju digitalnog servisa iz oblasti zaštite";
   pdf.setFont("OpenSans-Bold", "bold");
-  pdf.text(subjectPart1, 0 + prefixWidth, yPosition);
+  pdf.text(subjectPart1, 20 + prefixWidth, yPosition);
 
-  yPosition += 5;
+  yPosition += 6;
 
   // Part 3: Second line in bold font
   const subjectPart2 = "od požara - eZOP na ugovornu obavezu od godinu dana.";
   pdf.text(subjectPart2, 20, yPosition);
-  yPosition += 12;
+  yPosition += 13;
 
-  pdf.text("Predmet: INFORMATIVNA PONUDA", 20, yPosition);
+  pdf.setFont("OpenSans-Regular", "normal");
+  pdf.text("Predmet:", 20, yPosition);
+  pdf.setFont("OpenSans-Bold", "bold");
+  pdf.text("INFORMATIVNA PONUDA", 20 + pdf.getTextWidth("Predmet:"), yPosition);
   yPosition += 13;
 
   // Greeting
   pdf.setFontSize(11);
   pdf.setFont("OpenSans-Regular", "normal");
   pdf.text("Poštovani,", 20, yPosition);
-  yPosition += 12;
+  yPosition += 8;
 
   const introText =
     "Na osnovu prezentacije sofverskog rešenja za, servisa za elektronsku evidenciju zaštite od požara, eZOP, dostavljamo Vam informativnu ponudu sa uslovima za korišćenja usluga eZOP servisa, pod sledećim uslovima :";
   const introLines = pdf.splitTextToSize(introText, pageWidth - 40);
-  pdf.text(introLines, 20, yPosition);
-  yPosition += introLines.length * 7 + 10;
+  pdf.text(introLines, 20, yPosition, { lineHeightFactor: 1.3 });
+  yPosition += introLines.length * 7 + 4;
+
+  // Check if Section 1 fits on current page
+  yPosition = checkAndAddPage(pdf, yPosition, 50);
 
   // Section 1
   pdf.setFontSize(11);
@@ -161,30 +231,78 @@ const generateRegularCompanyContent = (
   pdf.text("1. Uvod u korišćenje eZOP servisa :", 30, yPosition);
   yPosition += 10;
 
-  const section1a =
-    "a. Za korišćenje mobilne i administratorske WEB platforme. Obuka podrazumeva teoretska pojašnjenja svih funkcionalnosti eZOP servisa na WEB i mobilnoj platformi. Obuka će se održati u prostorijama naručioca ili u prostorijama Bordi D.O.O u vremenskom trajanju od 4 časa.";
-  const section1aLines = pdf.splitTextToSize(section1a, pageWidth - 60);
+  // Section 1a - Bold letter with indented text
+  pdf.setFont("OpenSans-Bold", "bold");
+  pdf.text("a.", 35, yPosition);
+  const section1aText =
+    "Za korišćenje mobilne i administratorske WEB platforme. Obuka podrazumeva teoretska pojašnjenja svih funkcionalnosti eZOP servisa na WEB i mobilnoj platformi. Obuka će se održati u prostorijama naručioca ili u prostorijama Bordi D.O.O u vremenskom trajanju od 4 časa.";
+  const section1aWidth = pdf.getTextWidth("a. ");
+  const section1aLines = pdf.splitTextToSize(
+    section1aText,
+    pageWidth - 60 - section1aWidth
+  );
   pdf.setFont("OpenSans-Regular", "normal");
-  pdf.text(section1aLines, 35, yPosition);
-  yPosition += section1aLines.length * 7 + 1;
+  pdf.text(section1aLines, 35 + section1aWidth, yPosition, {
+    lineHeightFactor: 1.3,
+  });
+  yPosition += section1aLines.length * 5 + 1;
 
-  const section1b =
-    "b. Inicijalno kreiranje baze podataka uređaja, opreme i instalacija. Obilazak svih poslovnica i unos podataka za svaki pojedinačni uređaj, hidrant, opremu i instalaciju. Ponudom je obuhvaćena bar-kod identifikacijona nalepnica za sve uređaje korisnika.";
-  const section1bLines = pdf.splitTextToSize(section1b, pageWidth - 60);
-  pdf.text(section1bLines, 35, yPosition);
-  yPosition += section1bLines.length * 7 + 3;
+  // Check if Section 1b fits on current page
+  yPosition = checkAndAddPage(pdf, yPosition, 20);
 
-  const section1c =
-    "c. Kreiranje korisničkih naloga podrzumeva pomoć kod unos i profilisanje korisničkih naloga.";
-  const section1cLines = pdf.splitTextToSize(section1c, pageWidth - 60);
-  pdf.text(section1cLines, 35, yPosition);
-  yPosition += section1cLines.length * 7 + 3;
+  // Section 1b - Bold letter with indented text
+  pdf.setFont("OpenSans-Bold", "bold");
+  pdf.text("b.", 35, yPosition);
+  const section1bText =
+    "Inicijalno kreiranje baze podataka uređaja, opreme i instalacija. Obilazak svih poslovnica i unos podataka za svaki pojedinačni uređaj, hidrant, opremu i instalaciju. Ponudom je obuhvaćena bar-kod identifikacijona nalepnica za sve uređaje korisnika.";
+  const section1bWidth = pdf.getTextWidth("b. ");
+  const section1bLines = pdf.splitTextToSize(
+    section1bText,
+    pageWidth - 60 - section1bWidth
+  );
+  pdf.setFont("OpenSans-Regular", "normal");
+  pdf.text(section1bLines, 35 + section1bWidth, yPosition, {
+    lineHeightFactor: 1.3,
+  });
+  yPosition += section1bLines.length * 5 + 1;
 
-  const section1d =
-    "d. Podešavanje funkcionalnosti i preferenci profila podrazumeva podešavanje i predefinisanje nivoa pristupa korisnika, kao i profilisanje eZOP servisa u odnosu na profil organizacije.";
-  const section1dLines = pdf.splitTextToSize(section1d, pageWidth - 60);
-  pdf.text(section1dLines, 35, yPosition);
-  yPosition += section1dLines.length * 7 + 5;
+  // Check if Section 1c fits on current page
+  yPosition = checkAndAddPage(pdf, yPosition, 20);
+
+  // Section 1c - Bold letter with indented text
+  pdf.setFont("OpenSans-Bold", "bold");
+  pdf.text("c.", 35, yPosition);
+  const section1cText =
+    "Kreiranje korisničkih naloga podrzumeva pomoć kod unos i profilisanje korisničkih naloga.";
+  const section1cWidth = pdf.getTextWidth("c. ");
+  const section1cLines = pdf.splitTextToSize(
+    section1cText,
+    pageWidth - 60 - section1cWidth
+  );
+  pdf.setFont("OpenSans-Regular", "normal");
+  pdf.text(section1cLines, 35 + section1cWidth, yPosition, {
+    lineHeightFactor: 1.3,
+  });
+  yPosition += section1cLines.length * 5 + 1;
+
+  // Check if Section 1d fits on current page
+  yPosition = checkAndAddPage(pdf, yPosition, 20);
+
+  // Section 1d - Bold letter with indented text
+  pdf.setFont("OpenSans-Bold", "bold");
+  pdf.text("d.", 35, yPosition);
+  const section1dText =
+    "Podešavanje funkcionalnosti i preferenci profila podrazumeva podešavanje i predefinisanje nivoa pristupa korisnika, kao i profilisanje eZOP servisa u odnosu na profil organizacije.";
+  const section1dWidth = pdf.getTextWidth("d. ");
+  const section1dLines = pdf.splitTextToSize(
+    section1dText,
+    pageWidth - 60 - section1dWidth
+  );
+  pdf.setFont("OpenSans-Regular", "normal");
+  pdf.text(section1dLines, 35 + section1dWidth, yPosition, {
+    lineHeightFactor: 1.3,
+  });
+  yPosition += section1dLines.length * 5 + 1;
 
   // Check if commercial conditions box fits on current page
   const commercialBoxHeight = 35; // Balanced for readability and fit
@@ -201,23 +319,61 @@ const generateRegularCompanyContent = (
   // Section 2
   pdf.setFontSize(11);
   pdf.setFont("OpenSans-Bold", "bold");
-  pdf.text("2. Korišćenje eZOP servisa :", 30, yPosition);
+  pdf.text("2. Korišćenje eZOP servisa:", 30, yPosition);
   yPosition += 10;
 
-  const section2a = "a. Licenca za korišćenje administratorskih WEB naloga.";
+  // Section 2a - Bold letter with indented text
+  pdf.setFont("OpenSans-Bold", "bold");
+  pdf.text("a.", 35, yPosition);
+  const section2aText = "Licenca za korišćenje administratorskih WEB naloga.";
+  const section2aWidth = pdf.getTextWidth("a. ");
+  const section2aLines = pdf.splitTextToSize(
+    section2aText,
+    pageWidth - 60 - section2aWidth
+  );
   pdf.setFont("OpenSans-Regular", "normal");
-  pdf.text(section2a, 35, yPosition);
-  yPosition += 6;
+  pdf.text(section2aLines, 35 + section2aWidth, yPosition, {
+    lineHeightFactor: 1.3,
+  });
+  yPosition += section2aLines.length * 5 + 1;
 
-  const section2b =
-    "b. Licenca za korišćenje naloga za pristup mobilnoj aplikaciji.";
-  pdf.text(section2b, 35, yPosition);
-  yPosition += 6;
+  // Check if Section 2b fits on current page
+  yPosition = checkAndAddPage(pdf, yPosition, 20);
 
-  const section2c =
-    "c. Tehnička podrška – otvorena linija angažovanja 24/7 sa brzinom odziva u roku od 48 sati.";
-  pdf.text(section2c, 35, yPosition);
-  yPosition += 12;
+  // Section 2b - Bold letter with indented text
+  pdf.setFont("OpenSans-Bold", "bold");
+  pdf.text("b.", 35, yPosition);
+  const section2bText =
+    "Licenca za korišćenje naloga za pristup mobilnoj aplikaciji.";
+  const section2bWidth = pdf.getTextWidth("b. ");
+  const section2bLines = pdf.splitTextToSize(
+    section2bText,
+    pageWidth - 60 - section2bWidth
+  );
+  pdf.setFont("OpenSans-Regular", "normal");
+  pdf.text(section2bLines, 35 + section2bWidth, yPosition, {
+    lineHeightFactor: 1.3,
+  });
+  yPosition += section2bLines.length * 5 + 1;
+
+  // Check if Section 2c fits on current page
+  yPosition = checkAndAddPage(pdf, yPosition, 20);
+
+  // Section 2c - Bold letter with indented text
+  pdf.setFont("OpenSans-Bold", "bold");
+  pdf.text("c.", 35, yPosition);
+  const section2cText =
+    "Tehnička podrška – otvorena linija angažovanja 24/7 sa brzinom odziva u roku od 48 sati.";
+  const section2cWidth = pdf.getTextWidth("c. ");
+  const section2cLines = pdf.splitTextToSize(
+    section2cText,
+    pageWidth - 60 - section2cWidth
+  );
+  pdf.setFont("OpenSans-Regular", "normal");
+  pdf.text(section2cLines, 35 + section2cWidth, yPosition, {
+    lineHeightFactor: 1.3,
+  });
+  yPosition += section2cLines.length * 5 + 1;
 
   // Check if second commercial conditions box fits on current page
   yPosition = checkAndAddPage(pdf, yPosition, commercialBoxHeight);
@@ -246,68 +402,123 @@ const generateAccreditedCompanyContent = (
   pdf.setFontSize(11);
 
   // Part 1: "PREDMET : " in regular font
-  const subjectPrefix = "PREDMET : ";
+  const subjectPrefix = "PREDMET: ";
   pdf.setFont("OpenSans-Regular", "normal");
   pdf.text(subjectPrefix, 20, yPosition);
 
   // Calculate width of the prefix
-  const prefixWidth = pdf.getStringUnitWidth(subjectPrefix) * 11;
+  const prefixWidth = pdf.getTextWidth(subjectPrefix);
 
   // Part 2: Rest of the first line in bold font
   const subjectPart1 =
-    "Ponuda za implermentaciju digitalnog servisa iz oblasti zaštite";
+    "Ponuda za implementaciju digitalnog servisa iz oblasti zaštite";
   pdf.setFont("OpenSans-Bold", "bold");
   pdf.text(subjectPart1, 20 + prefixWidth, yPosition);
 
-  yPosition += 10;
+  yPosition += 6;
 
   // Part 3: Second line in bold font
   const subjectPart2 = "od požara - eZOP";
   pdf.text(subjectPart2, 20, yPosition);
-  yPosition += 18;
+  yPosition += 13;
 
   // Greeting
   pdf.setFontSize(11);
   pdf.setFont("OpenSans-Regular", "normal");
   pdf.text("Poštovani,", 20, yPosition);
-  yPosition += 10;
+  yPosition += 6;
 
   const introText =
     'Na osnovu dostavljenih podataka i prethodne prezentacije usluga "eZOP", servisa za elektronsku evidenciju protivpožarne opreme, instalacija i uređaja , dostavljamo Vam informativnu ponudu sa uslovima za korišćenja usluga eZOP servisa, pod sledećim uslovima :';
   const introLines = pdf.splitTextToSize(introText, pageWidth - 40);
-  pdf.text(introLines, 20, yPosition);
-  yPosition += introLines.length * 7 + 10;
+  pdf.text(introLines, 20, yPosition, { lineHeightFactor: 1.3 });
+  yPosition += introLines.length * 7 + 6;
+
+  // Check if Section 1 fits on current page
+  yPosition = checkAndAddPage(pdf, yPosition, 50);
 
   // Section 1
   pdf.setFontSize(11);
   pdf.setFont("OpenSans-Bold", "bold");
   pdf.text("1. Uvod u korišćenje eZOP servisa :", 30, yPosition);
-  yPosition += 10;
+  yPosition += 7;
 
-  const section1a =
-    "a. Obuka zaposlenih za korišćenje mobilne i administratorske WEB platforme. Obuka podrazumeva teoretska pojašnjenja svih finkcionalnosti eZOP servisa na WEB i mobilnoj platformi na lokaciji korisnika.";
-  const section1aLines = pdf.splitTextToSize(section1a, pageWidth - 60);
-  pdf.setFont("OpenSans-Regular", "normal");
-  pdf.text(section1aLines, 35, yPosition);
-  yPosition += section1aLines.length * 7 + 1;
+  // Section 1a - Bold letter with indented text
+  pdf.setFont("OpenSans-Bold", "bold");
+  pdf.text("a.", 35, yPosition);
+  const section1aText =
+    "Obuka zaposlenih za korišćenje mobilne i administratorske WEB platforme. Obuka podrazumeva teoretska pojašnjenja svih finkcionalnosti eZOP servisa na WEB i mobilnoj platformi na lokaciji korisnika.";
+  const section1aWidth = pdf.getTextWidth("a. ");
+  const heightUsed1aAcc = drawTextWithBoldKeywords(
+    pdf,
+    section1aText,
+    35 + section1aWidth,
+    yPosition,
+    pageWidth - 60 - section1aWidth,
+    ["Obuka zaposlenih"],
+    1.0
+  );
+  yPosition += heightUsed1aAcc + 0.5;
 
-  const section1b =
-    "b. Kreiranje korisničkih naloga podrzumeva pomoć kod unos i profilisanje korisničkih naloga.";
-  const section1bLines = pdf.splitTextToSize(section1b, pageWidth - 60);
-  pdf.text(section1bLines, 35, yPosition);
-  yPosition += section1bLines.length * 7 + 3;
+  // Check if Section 1b fits on current page
+  yPosition = checkAndAddPage(pdf, yPosition, 20);
 
-  const section1c =
-    "c. Podešavanje funkcionalnosti i preferenci profila podrazumeva podešavanje i predefinisanje nivoa pristupa korisnika, kao i profilisanje eZOP servisa u odnosu na profil organizacije";
-  const section1cLines = pdf.splitTextToSize(section1c, pageWidth - 60);
-  pdf.text(section1cLines, 35, yPosition);
-  yPosition += section1cLines.length * 7 + 3;
+  // Section 1b - Bold letter with indented text
+  pdf.setFont("OpenSans-Bold", "bold");
+  pdf.text("b.", 35, yPosition);
+  const section1bText =
+    "Kreiranje korisničkih naloga podrzumeva pomoć kod unos i profilisanje korisničkih naloga.";
+  const section1bWidth = pdf.getTextWidth("b. ");
+  const heightUsed1bAcc = drawTextWithBoldKeywords(
+    pdf,
+    section1bText,
+    35 + section1bWidth,
+    yPosition,
+    pageWidth - 60 - section1bWidth,
+    ["Kreiranje korisničkih naloga"],
+    1.0
+  );
+  yPosition += heightUsed1bAcc + 0.5;
 
-  const section1d =
-    "d. Isporuka bar kod identifikacionih nalepnica (jedna rolna nalepnica) – 4000 komada silver pet visoko adhezivnih nalepnica u rolni, sa trajnim otiskom termalne štampe bar kod identifikacije.";
-  const section1dLines = pdf.splitTextToSize(section1d, pageWidth - 60);
-  pdf.text(section1dLines, 35, yPosition);
-  yPosition += section1dLines.length * 7 + 5;
+  // Check if Section 1c fits on current page
+  yPosition = checkAndAddPage(pdf, yPosition, 20);
+
+  // Section 1c - Bold letter with indented text
+  pdf.setFont("OpenSans-Bold", "bold");
+  pdf.text("c.", 35, yPosition);
+  const section1cText =
+    "Podešavanje funkcionalnosti i preferenci profila podrazumeva podešavanje i predefinisanje nivoa pristupa korisnika, kao i profilisanje eZOP servisa u odnosu na profil organizacije";
+  const section1cWidth = pdf.getTextWidth("c. ");
+  const heightUsed1cAcc = drawTextWithBoldKeywords(
+    pdf,
+    section1cText,
+    35 + section1cWidth,
+    yPosition,
+    pageWidth - 60 - section1cWidth,
+    ["Podešavanje funkcionalnosti"],
+    1.0
+  );
+  yPosition += heightUsed1cAcc + 0.5;
+
+  // Check if Section 1d fits on current page
+  yPosition = checkAndAddPage(pdf, yPosition, 20);
+
+  // Section 1d - Bold letter with indented text
+  pdf.setFont("OpenSans-Bold", "bold");
+  pdf.text("d.", 35, yPosition);
+  const section1dText =
+    "Isporuka bar kod identifikacionih nalepnica (jedna rolna nalepnica) – 4000 komada silver pet visoko adhezivnih nalepnica u rolni, sa trajnim otiskom termalne štampe bar kod identifikacije.";
+  const section1dWidth = pdf.getTextWidth("d. ");
+  const heightUsed1dAcc = drawTextWithBoldKeywords(
+    pdf,
+    section1dText,
+    35 + section1dWidth,
+    yPosition,
+    pageWidth - 60 - section1dWidth,
+    ["Isporuka bar kod identifikacionih nalepnica"],
+    1.0
+  );
+  yPosition += heightUsed1dAcc + 0.5;
 
   // Check if commercial conditions box fits on current page
   const commercialBoxHeight = 35; // Balanced for readability and fit
@@ -324,34 +535,104 @@ const generateAccreditedCompanyContent = (
   // Section 2
   pdf.setFontSize(11);
   pdf.setFont("OpenSans-Bold", "bold");
-  pdf.text("2. Korišćenje eZOP servisa :", 30, yPosition);
+  pdf.text("2. Korišćenje eZOP servisa:", 30, yPosition);
   yPosition += 10;
 
-  const section2a = "a. Licenca - za korišćenje administratorskih WEB naloga.";
-  pdf.setFont("OpenSans-Regular", "normal");
-  pdf.text(section2a, 35, yPosition);
-  yPosition += 6;
+  // Section 2a - Bold letter with indented text
+  pdf.setFont("OpenSans-Bold", "bold");
+  pdf.text("a.", 35, yPosition);
+  const section2aText = "Licenca - za korišćenje administratorskih WEB naloga.";
+  const section2aWidth = pdf.getTextWidth("a. ");
+  const heightUsed2aAcc = drawTextWithBoldKeywords(
+    pdf,
+    section2aText,
+    35 + section2aWidth,
+    yPosition,
+    pageWidth - 60 - section2aWidth,
+    ["Licenca"],
+    1.0
+  );
+  yPosition += heightUsed2aAcc + 0.5;
 
-  const section2b =
-    "b. Licenca - za korišćenje naloga za pristup mobilnoj aplikaciji.";
-  pdf.text(section2b, 35, yPosition);
-  yPosition += 6;
+  // Check if Section 2b fits on current page
+  yPosition = checkAndAddPage(pdf, yPosition, 20);
 
-  const section2c =
-    "c. Tehnička podrška - otvorena linija angažovanja 24/7 sa brzinom odziva u roku od 48 sati.";
-  pdf.text(section2c, 35, yPosition);
-  yPosition += 6;
+  // Section 2b - Bold letter with indented text
+  pdf.setFont("OpenSans-Bold", "bold");
+  pdf.text("b.", 35, yPosition);
+  const section2bText =
+    "Licenca - za korišćenje naloga za pristup mobilnoj aplikaciji.";
+  const section2bWidth = pdf.getTextWidth("b. ");
+  const heightUsed2bAcc = drawTextWithBoldKeywords(
+    pdf,
+    section2bText,
+    35 + section2bWidth,
+    yPosition,
+    pageWidth - 60 - section2bWidth,
+    ["Licenca"],
+    1.0
+  );
+  yPosition += heightUsed2bAcc + 0.5;
 
-  const section2d =
-    "d. Baza podataka – Do 5.000 uređaja (PP aparata, hidranata I instalacija) u sistemu po ceni navedenoj 7.000 RSD + PDV. Nakon prekoračenja 5.000 uređaja, cena se računa kumolativno.";
-  const section2dLines = pdf.splitTextToSize(section2d, pageWidth - 60);
-  pdf.text(section2dLines, 35, yPosition);
-  yPosition += section2dLines.length * 7 + 1;
+  // Check if Section 2c fits on current page
+  yPosition = checkAndAddPage(pdf, yPosition, 20);
 
-  const section2e =
-    "e. Kumolativna računica - 1.40 RSD + PDV po PP aparatu, 15 RSD + PDV po Hidrantu i 110 RSD + PDV po instalaciji.";
-  pdf.text(section2e, 35, yPosition);
-  yPosition += 10;
+  // Section 2c - Bold letter with indented text
+  pdf.setFont("OpenSans-Bold", "bold");
+  pdf.text("c.", 35, yPosition);
+  const section2cText =
+    "Tehnička podrška - otvorena linija angažovanja 24/7 sa brzinom odziva u roku od 48 sati.";
+  const section2cWidth = pdf.getTextWidth("c. ");
+  const heightUsed2cAcc = drawTextWithBoldKeywords(
+    pdf,
+    section2cText,
+    35 + section2cWidth,
+    yPosition,
+    pageWidth - 60 - section2cWidth,
+    ["Tehnička podrška"],
+    1.0
+  );
+  yPosition += heightUsed2cAcc + 0.5;
+
+  // Check if Section 2d fits on current page
+  yPosition = checkAndAddPage(pdf, yPosition, 20);
+
+  // Section 2d - Bold letter with indented text
+  pdf.setFont("OpenSans-Bold", "bold");
+  pdf.text("d.", 35, yPosition);
+  const section2dText =
+    "Baza podataka – Do 5.000 uređaja (PP aparata, hidranata I instalacija) u sistemu po ceni navedenoj 7.000 RSD + PDV. Nakon prekoračenja 5.000 uređaja, cena se računa kumolativno.";
+  const section2dWidth = pdf.getTextWidth("d. ");
+  const heightUsed2dAcc = drawTextWithBoldKeywords(
+    pdf,
+    section2dText,
+    35 + section2dWidth,
+    yPosition,
+    pageWidth - 60 - section2dWidth,
+    ["Baza podataka"],
+    1.0
+  );
+  yPosition += heightUsed2dAcc + 0.5;
+
+  // Check if Section 2e fits on current page
+  yPosition = checkAndAddPage(pdf, yPosition, 20);
+
+  // Section 2e - Bold letter with indented text
+  pdf.setFont("OpenSans-Bold", "bold");
+  pdf.text("e.", 35, yPosition);
+  const section2eText =
+    "Kumolativna računica - 1.40 RSD + PDV po PP aparatu, 15 RSD + PDV po Hidrantu i 110 RSD + PDV po instalaciji.";
+  const section2eWidth = pdf.getTextWidth("e. ");
+  const heightUsed2eAcc = drawTextWithBoldKeywords(
+    pdf,
+    section2eText,
+    35 + section2eWidth,
+    yPosition,
+    pageWidth - 60 - section2eWidth,
+    ["Kumolativna računica"],
+    1.0
+  );
+  yPosition += heightUsed2eAcc + 0.5;
 
   // Check if second commercial conditions box fits on current page
   yPosition = checkAndAddPage(pdf, yPosition, commercialBoxHeight);
@@ -497,11 +778,11 @@ const addCommercialConditionsBox = (
   // Add text with italic font
   pdf.setFontSize(11);
   pdf.setFont("OpenSans-BoldItalic", "bolditalic");
-  pdf.text("Komercijalni uslovi :", 20 + padding, yPosition + 1);
-  yPosition += 1;
+  pdf.text("Komercijalni uslovi:", 20 + padding, yPosition + 4);
+  yPosition += 5;
   pdf.setFont("OpenSans-Italic", "italic");
   pdf.setFontSize(11);
-  pdf.text(textLines, 20 + padding, yPosition + 4);
+  pdf.text(textLines, 20 + padding, yPosition + 4, { lineHeightFactor: 1.3 });
 
   return yPosition + boxHeight + 3;
 };
@@ -514,29 +795,73 @@ const addFooter = (pdf: jsPDF, yPosition: number, pageWidth: number) => {
   // Add notes section
   pdf.setFontSize(11);
   pdf.setFont("OpenSans-Bold", "bold");
-  pdf.text("NAPOMENE :", 20, yPosition);
+  pdf.text("NAPOMENE:", 20, yPosition);
   yPosition += 12;
 
   const notes = [
-    "1. Rok važenja ponude je 15 dana.",
-    "2. Ponuda može biti naknadno korigovana, shodno budućim pregovorima oko uslova korišćenja.",
-    "3. Nakon prihvatanja ponude, Naručioc je dužan da potpiše Ugovor o poslovno tehničkoj saradnji za korišćenje usluga eZOP servisa sa Pružaocem usluge (Bordi d.o.o.)",
+    "1.  Rok važenja ponude je 15 dana.",
+    "2.  Ponuda može biti naknadno korigovana, shodno budućim pregovorima oko uslova korišćenja.",
+    "3.  Nakon prihvatanja ponude, Naručioc je dužan da potpiše Ugovor o poslovno tehničkoj saradnji za korišćenje usluga eZOP servisa sa Pružaocem usluge (Bordi d.o.o.)",
     "4.  Usluga će se sprovesti u 2 faze sa predloženom dinamikom :",
     "    a. Uvod u korišćenje eZOP servisa (7 dana od datuma potpisivanja Ugovora)",
     "    b. Aktiviranje licenci i zvaničan početak rada (10 dana od datuma potpisivanja Ugovora). Troškovi mesečne licence će se naplaćivati počev od datuma potpisivanja zapisnika o isporci licenci.",
     "5.  Pružaoc usluge zadržava parvo da unapređuje, poboljšava i unapređuje funkcionalnosti eZOP servisa u skladu sa intencijama i potrebama struke. O svim eventualnim modifikacijama servisa, Poručioc je dužan da obavesti Naručioca i primeni sve neophodne tehničke mere za neometano korišćenje servisa od strane Naručioca.",
-    '6. Na osnovu člana 25. stav 2. Zakona o zaštiti od požara („Službeni glasnik RS", br. 111/09, 20/15, 87/18 i 87/18 – dr. zakon),usvojen je PRAVILNIK o bližim uslovima koje moraju ispunjavati pravna lica za obavljanje poslova organizovanja zaštite od požara u subjektima prve, druge i treće kategorije ugroženosti od požara. Shodno ovom pravilniku, Naručioc je saglasan da će svi podaci, dostupni u eZOP bazi podataka biti dostupni i na raspolaganju, prema zahtevu i potrebi nadležnih državnih organa Republike Srbije.',
-    "7. Način izjašnjavanja o uslovima ove ponude i proceduru nabavke, određuje Naručioc u daljim dogovorima sa Pružaocem usluge. Konačna ponuda će biti sastavni deo Ugovora.",
-    "8. Komercijalni uslovi ponude nisu konačni i mogu biti predmet daljih dogovora u odnosu na predočene zahteve Naručioca.",
+    '6.  Na osnovu člana 25. stav 2. Zakona o zaštiti od požara („Službeni glasnik RS", br. 111/09, 20/15, 87/18 i 87/18 – dr. zakon),usvojen je PRAVILNIK o bližim uslovima koje moraju ispunjavati pravna lica za obavljanje poslova organizovanja zaštite od požara u subjektima prve, druge i treće kategorije ugroženosti od požara. Shodno ovom pravilniku, Naručioc je saglasan da će svi podaci, dostupni u eZOP bazi podataka biti dostupni i na raspolaganju, prema zahtevu i potrebi nadležnih državnih organa Republike Srbije.',
+    "7.  Način izjašnjavanja o uslovima ove ponude i proceduru nabavke, određuje Naručioc u daljim dogovorima sa Pružaocem usluge. Konačna ponuda će biti sastavni deo Ugovora.",
+    "8.  Komercijalni uslovi ponude nisu konačni i mogu biti predmet daljih dogovora u odnosu na predočene zahteve Naručioca.",
   ];
 
   pdf.setFontSize(11);
   pdf.setFont("OpenSans-Regular", "normal");
 
   for (const note of notes) {
-    const noteLines = pdf.splitTextToSize(note, pageWidth - 40);
-    pdf.text(noteLines, 25, yPosition);
-    yPosition += noteLines.length * 5 + 2;
+    // Extract number and text
+    const match = note.match(/^(\d+\.\s*)(.*)$/);
+    if (match) {
+      const [, number, text] = match;
+
+      // Draw bold number
+      pdf.setFont("OpenSans-Bold", "bold");
+      pdf.text(number, 25, yPosition);
+
+      // Draw regular text with proper indentation
+      const numberWidth = pdf.getTextWidth(number);
+      const textLines = pdf.splitTextToSize(text, pageWidth - 40 - numberWidth);
+      pdf.setFont("OpenSans-Regular", "normal");
+      pdf.text(textLines, 25 + numberWidth, yPosition, {
+        lineHeightFactor: 1.4,
+      });
+      yPosition += textLines.length * 5 + 3;
+    } else {
+      // For sub-items (a., b., etc.)
+      const subMatch = note.match(/^(\s*)([a-z]\.\s*)(.*)$/);
+      if (subMatch) {
+        const [, indent, letter, text] = subMatch;
+        const indentWidth = pdf.getTextWidth(indent);
+
+        // Draw bold letter
+        pdf.setFont("OpenSans-Bold", "bold");
+        pdf.text(letter, 25 + indentWidth, yPosition);
+
+        // Draw regular text
+        const letterWidth = pdf.getTextWidth(letter);
+        const textLines = pdf.splitTextToSize(
+          text,
+          pageWidth - 40 - indentWidth - letterWidth
+        );
+        pdf.setFont("OpenSans-Regular", "normal");
+        pdf.text(textLines, 25 + indentWidth + letterWidth, yPosition, {
+          lineHeightFactor: 1.3,
+        });
+        yPosition += textLines.length * 5 + 2;
+      } else {
+        // Fallback for other text
+        const noteLines = pdf.splitTextToSize(note, pageWidth - 40);
+        pdf.setFont("OpenSans-Regular", "normal");
+        pdf.text(noteLines, 25, yPosition, { lineHeightFactor: 1.3 });
+        yPosition += noteLines.length * 5 + 2;
+      }
+    }
   }
 
   // Signature

@@ -164,7 +164,7 @@ const ContractCalculator = () => {
 
   const downloadCSV = () => {
     const { subtotal, vatAmount, monthlyTotal } = calculateTotals();
-    const header = ["Description", "Unit Price", "Quantity", "Total"];
+    const header = ["Entitet", "Jedinična cena", "Količina", "Ukupno"];
     const lines = [header.join(",")];
 
     rows.forEach((row) => {
@@ -177,9 +177,9 @@ const ContractCalculator = () => {
       lines.push(csvRow.join(","));
     });
 
-    lines.push(["", "", "Subtotal", subtotal].join(","));
-    lines.push(["", "", `VAT ${vatPercent}%`, vatAmount].join(","));
-    lines.push(["", "", "Monthly Total", monthlyTotal].join(","));
+    lines.push(["", "", "Ukupno", subtotal].join(","));
+    lines.push(["", "", `PDV ${vatPercent}%`, vatAmount].join(","));
+    lines.push(["", "", "Ukupna cena", monthlyTotal].join(",") + ` ${currency}`);
 
     const blob = new Blob([lines.join("\n")], {
       type: "text/csv;charset=utf-8;",
@@ -187,7 +187,7 @@ const ContractCalculator = () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "contract_price_calculation.csv";
+    a.download = `${companyName}_ponuda_eZOP_softvera.csv`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -290,19 +290,6 @@ const ContractCalculator = () => {
 
                   <div className="flex items-center border border-black/10 p-2 rounded-md space-x-2">
                     <Checkbox
-                      id="showTable"
-                      checked={showTableInPDF}
-                      onCheckedChange={(checked) =>
-                        setShowTableInPDF(checked as boolean)
-                      }
-                    />
-                    <Label htmlFor="showTable" className="text-sm">
-                      Prikaži tabelu u PDF-u
-                    </Label>
-                  </div>
-
-                  <div className="flex items-center border border-black/10 p-2 rounded-md space-x-2">
-                    <Checkbox
                       id="accreditedCompany"
                       checked={isAccreditedCompany}
                       onCheckedChange={(checked) =>
@@ -316,7 +303,7 @@ const ContractCalculator = () => {
                 </div>
 
                 {/* Drugi red - dugmići */}
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center">
                   <Button onClick={addRow} className="gap-2">
                     <Plus className="h-4 w-4" />
                     Dodaj red
@@ -340,6 +327,19 @@ const ContractCalculator = () => {
                     <Printer className="h-4 w-4" />
                     PDF
                   </Button>
+
+                  <div className="flex items-center border border-black/10 p-2 rounded-md space-x-2 ml-4">
+                    <Checkbox
+                      id="showTable"
+                      checked={showTableInPDF}
+                      onCheckedChange={(checked) =>
+                        setShowTableInPDF(checked as boolean)
+                      }
+                    />
+                    <Label htmlFor="showTable" className="text-sm">
+                      Prikaži tabelu u PDF-u
+                    </Label>
+                  </div>
                 </div>
               </div>
 
@@ -399,17 +399,35 @@ const ContractCalculator = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="showTable-mobile"
-                      checked={showTableInPDF}
-                      onCheckedChange={(checked) =>
-                        setShowTableInPDF(checked as boolean)
-                      }
-                    />
-                    <Label htmlFor="showTable-mobile" className="text-sm">
-                      Prikaži tabelu u PDF-u
-                    </Label>
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="showTable-mobile"
+                        checked={showTableInPDF}
+                        onCheckedChange={(checked) =>
+                          setShowTableInPDF(checked as boolean)
+                        }
+                      />
+                      <Label htmlFor="showTable-mobile" className="text-sm">
+                        Prikaži tabelu u PDF-u
+                      </Label>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="accreditedCompany-mobile"
+                        checked={isAccreditedCompany}
+                        onCheckedChange={(checked) =>
+                          setIsAccreditedCompany(checked as boolean)
+                        }
+                      />
+                      <Label
+                        htmlFor="accreditedCompany-mobile"
+                        className="text-sm"
+                      >
+                        Ponuda za firmu akreditovanu za servis i kontrolu
+                      </Label>
+                    </div>
                   </div>
                 </div>
 
@@ -564,7 +582,7 @@ const ContractCalculator = () => {
                       Total{" "}
                     </td>
                     <td className="p-2 sm:p-4 text-right font-bold text-primary text-sm sm:text-base">
-                      {formatNumber(totals.monthlyTotal)}
+                      {formatNumber(totals.monthlyTotal)} {currency}
                     </td>
                     <td></td>
                   </tr>
