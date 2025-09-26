@@ -34,6 +34,7 @@ export interface CalculatorRow {
 export interface CalculatorData {
   currency: string;
   vatPercent: number;
+  discountPercent: number;
   rows: CalculatorRow[];
   offerNumber: string;
   companyName: string;
@@ -44,6 +45,7 @@ export interface CalculatorData {
 const ContractCalculator = () => {
   const [currency, setCurrency] = useState("RSD");
   const [vatPercent, setVatPercent] = useState(20);
+  const [discountPercent, setDiscountPercent] = useState(null);
   const [rows, setRows] = useState<CalculatorRow[]>([]);
   const [offerNumber, setOfferNumber] = useState("");
   const [companyName, setCompanyName] = useState("");
@@ -61,9 +63,17 @@ const ContractCalculator = () => {
 
   const calculateTotals = () => {
     const subtotal = rows.reduce((sum, row) => sum + row.total, 0);
-    const vatAmount = subtotal * (vatPercent / 100);
-    const monthlyTotal = subtotal + vatAmount;
-    return { subtotal, vatAmount, monthlyTotal };
+    const discountAmount = subtotal * (discountPercent / 100);
+    const subtotalAfterDiscount = subtotal - discountAmount;
+    const vatAmount = subtotalAfterDiscount * (vatPercent / 100);
+    const monthlyTotal = subtotalAfterDiscount + vatAmount;
+    return {
+      subtotal,
+      discountAmount,
+      subtotalAfterDiscount,
+      vatAmount,
+      monthlyTotal,
+    };
   };
 
   const updateRow = (
@@ -163,7 +173,13 @@ const ContractCalculator = () => {
   };
 
   const downloadCSV = () => {
-    const { subtotal, vatAmount, monthlyTotal } = calculateTotals();
+    const {
+      subtotal,
+      discountAmount,
+      subtotalAfterDiscount,
+      vatAmount,
+      monthlyTotal,
+    } = calculateTotals();
     const header = ["Entitet", "Jedinična cena", "Količina", "Ukupno"];
     const lines = [header.join(",")];
 
@@ -178,8 +194,18 @@ const ContractCalculator = () => {
     });
 
     lines.push(["", "", "Ukupno", subtotal].join(","));
+    if (discountPercent > 0) {
+      lines.push(
+        ["", "", `Popust ${discountPercent}%`, discountAmount].join(",")
+      );
+      lines.push(
+        ["", "", "Ukupno nakon popusta", subtotalAfterDiscount].join(",")
+      );
+    }
     lines.push(["", "", `PDV ${vatPercent}%`, vatAmount].join(","));
-    lines.push(["", "", "Ukupna cena", monthlyTotal].join(",") + ` ${currency}`);
+    lines.push(
+      ["", "", "Ukupna cena", monthlyTotal].join(",") + ` ${currency}`
+    );
 
     const blob = new Blob([lines.join("\n")], {
       type: "text/csv;charset=utf-8;",
@@ -203,6 +229,7 @@ const ContractCalculator = () => {
     const data: CalculatorData = {
       currency,
       vatPercent,
+      discountPercent,
       rows,
       offerNumber,
       companyName,
@@ -263,6 +290,22 @@ const ContractCalculator = () => {
                       value={vatPercent}
                       onChange={(e) => setVatPercent(Number(e.target.value))}
                       className="w-20"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="discount">Popust (%)</Label>
+                    <Input
+                      id="discount"
+                      type="number"
+                      value={discountPercent}
+                      onChange={(e) =>
+                        setDiscountPercent(Number(e.target.value) || 0)
+                      }
+                      className="w-20"
+                      min="0"
+                      max="100"
+                      placeholder="10%"
                     />
                   </div>
 
@@ -371,6 +414,21 @@ const ContractCalculator = () => {
                           setVatPercent(Number(e.target.value) || 0)
                         }
                         className="w-20"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="discount-mobile">Popust (%)</Label>
+                      <Input
+                        id="discount-mobile"
+                        type="number"
+                        value={discountPercent}
+                        onChange={(e) =>
+                          setDiscountPercent(Number(e.target.value) || 0)
+                        }
+                        className="w-20"
+                        min="0"
+                        max="100"
                       />
                     </div>
                   </div>
@@ -562,6 +620,34 @@ const ContractCalculator = () => {
                     </td>
                     <td></td>
                   </tr>
+                  {discountPercent > 0 && (
+                    <>
+                      <tr className="border-b bg-table-header">
+                        <td
+                          colSpan={3}
+                          className="p-2 sm:p-4 text-right font-semibold text-sm sm:text-base"
+                        >
+                          Popust {discountPercent}%
+                        </td>
+                        <td className="p-2 sm:p-4 text-right font-semibold text-sm sm:text-base text-red-600">
+                          -{formatNumber(totals.discountAmount)}
+                        </td>
+                        <td></td>
+                      </tr>
+                      <tr className="border-b bg-table-header">
+                        <td
+                          colSpan={3}
+                          className="p-2 sm:p-4 text-right font-semibold text-sm sm:text-base"
+                        >
+                          Ukupno nakon popusta
+                        </td>
+                        <td className="p-2 sm:p-4 text-right font-semibold text-sm sm:text-base">
+                          {formatNumber(totals.subtotalAfterDiscount)}
+                        </td>
+                        <td></td>
+                      </tr>
+                    </>
+                  )}
                   <tr className="border-b bg-table-header">
                     <td
                       colSpan={3}

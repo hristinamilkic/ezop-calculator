@@ -721,8 +721,10 @@ const addTableToPDF = (
 
   // Add totals
   const subtotal = data.rows.reduce((sum, row) => sum + row.total, 0);
-  const vatAmount = subtotal * (data.vatPercent / 100);
-  const monthlyTotal = subtotal + vatAmount;
+  const discountAmount = subtotal * (data.discountPercent / 100);
+  const subtotalAfterDiscount = subtotal - discountAmount;
+  const vatAmount = subtotalAfterDiscount * (data.vatPercent / 100);
+  const monthlyTotal = subtotalAfterDiscount + vatAmount;
 
   yPosition += 8;
   pdf.line(20, yPosition - 5, pageWidth - 20, yPosition - 5);
@@ -738,6 +740,35 @@ const addTableToPDF = (
   );
 
   yPosition += 8;
+
+  // Add discount row if discount is applied
+  if (data.discountPercent > 0) {
+    pdf.text(`Popust (${data.discountPercent}%):`, 120, yPosition, {
+      align: "right",
+    });
+    pdf.text(
+      `-${discountAmount.toLocaleString(undefined, {
+        maximumFractionDigits: 2,
+      })}`,
+      168,
+      yPosition,
+      { align: "right" }
+    );
+
+    yPosition += 8;
+    pdf.text("Ukupno nakon popusta:", 120, yPosition, { align: "right" });
+    pdf.text(
+      subtotalAfterDiscount.toLocaleString(undefined, {
+        maximumFractionDigits: 2,
+      }),
+      168,
+      yPosition,
+      { align: "right" }
+    );
+
+    yPosition += 8;
+  }
+
   pdf.text(`PDV (${data.vatPercent}%):`, 120, yPosition, { align: "right" });
   pdf.text(
     vatAmount.toLocaleString(undefined, { maximumFractionDigits: 2 }),
